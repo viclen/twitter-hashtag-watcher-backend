@@ -25,7 +25,6 @@
   },
   "scripts": {
     "build": "babel src -d dist --source-maps",
-    "watch": "nodemon --exec babel-node src/server.js",
     "start": "nodemon --exec babel-node src/server.js",
     "dist": "node dist/server.js"
   }
