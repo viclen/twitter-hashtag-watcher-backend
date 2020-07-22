@@ -12,7 +12,7 @@ O backend da aplicação foi feito em Node.js, usando websockets para comunicaç
 
 Antes de iniciar o servidor, edite o arquivo `.env-example` colocando seus dados para a API do Twitter*. Após isso, renomeie o arquivo para `.env`.
 
-*Se você ainda não tem seus dados de acesso à API do Twitter, consiga-os (neste link)[https://developer.twitter.com].
+*Se você ainda não tem seus dados de acesso à API do Twitter, consiga-os [neste link](https://developer.twitter.com).
 
 ### Instalação
 
