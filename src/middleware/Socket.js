@@ -37,10 +37,10 @@ class Socket {
     /**
      * Middleware para adicionar a conexao por socket ao request para ser usado em outras partes do app
      * @param {Request} req a requisicao para armazenar o socket
-     * @param {Response} res a resposta
+     * @param {Response} _res a resposta
      * @param {Function} next passar para o proximo handler
      */
-    middleware(req, res, next) {
+    middleware(req, _res, next) {
         // adiciona o socket ao request
         req.io = this.io;
 
