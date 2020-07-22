@@ -4,6 +4,20 @@ import regeneratorRuntime from "regenerator-runtime";
 
 dotenv.config();
 
+const SUPPORTED_LANGUAGES = {
+    ar: 'Arabic',
+    nl: 'Dutch',
+    en: 'English',
+    fa: 'Farsi',
+    fr: 'French',
+    de: 'German',
+    id: 'Indonesian',
+    it: 'Italian',
+    ja: 'Japanese',
+    pt: 'Portuguese',
+    es: 'Spanish',
+}
+
 class TweetController {
     // instancia estatica com o objeto criado no construtor
     static instance;
@@ -30,6 +44,7 @@ class TweetController {
             approved: [],
             rejected: [],
             watching: false,
+            language: ''
         };
 
         // referencia pra criar os IDs unicos
@@ -49,11 +64,21 @@ class TweetController {
             // adiciona o # se nao houver
             hashtag = hashtag.startsWith("#") ? hashtag : "#" + hashtag;
 
+            // cria o filtro pra stream
+            let query = {
+                track: hashtag
+            }
+            // pega o idioma
+            let language = req.query.lang;
+            // se tiver selecao de idioma e for um dos idiomas disponiveis
+            if (language && SUPPORTED_LANGUAGES[language]) {
+                // adiciona ao filtro
+                query.language = language;
+                // adiciona aos dados
+                this.data.language = language;
+            }
             // cria a stream
-            this.stream = this.T.stream('statuses/filter', {
-                track: hashtag,
-                language: 'pt'
-            });
+            this.stream = this.T.stream('statuses/filter', query);
 
             // salva a hashtag nos dados
             this.data.hashtag = hashtag;
@@ -62,6 +87,7 @@ class TweetController {
 
             // adiciona o evento para cada tweet novo
             this.stream.on('tweet', tweet => {
+                // se for um retweet ou não houver a hashtag no texto
                 if (tweet.text.startsWith("RT") || !tweet.text.toUpperCase().includes(hashtag.toUpperCase())) {
                     return;
                 }
@@ -76,6 +102,7 @@ class TweetController {
                 req.io.emit("change", this.data);
             });
 
+            // emite o socket com os dados para o front end
             req.io.emit("change", this.data);
         }
 
