@@ -96,7 +96,7 @@ class TweetController {
                 tweet.id = ++this.lastId;
 
                 // adiciona à lista geral
-                this.data.list = [tweet, ...this.data.list];
+                this.data.list = [...this.data.list, tweet];
 
                 // emite o socket com os dados para o front end
                 req.io.emit("change", this.data);
@@ -119,6 +119,30 @@ class TweetController {
         if (this.stream) {
             this.stream.stop();
             this.data.watching = false;
+
+            req.io.emit("change", this.data);
+        }
+
+        // retorna dizendo que funcionou
+        return res.json({
+            status: 1,
+        });
+    };
+
+    // limpa os tweets
+    clear(req, res) {
+        // se uma stream estiver sendo monitorada
+        if (this.stream) {
+            this.stream.stop();
+
+            this.data = {
+                hashtag: this.data.hashtag,
+                list: [],
+                approved: [],
+                rejected: [],
+                watching: false,
+                language: this.data.language
+            };
 
             req.io.emit("change", this.data);
         }

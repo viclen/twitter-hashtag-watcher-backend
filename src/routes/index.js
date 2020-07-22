@@ -11,6 +11,9 @@ const router = express.Router();
 router.get("/watch/:hashtag", tweetController.watch.bind(tweetController));
 router.get("/stop", tweetController.stop.bind(tweetController));
 
+// rota para limpar os tweets
+router.get("/clear", tweetController.clear.bind(tweetController));
+
 // rotas de controle do tweet
 router.get("/tweet/:id/approve", tweetController.approve.bind(tweetController));
 router.get("/tweet/:id/reject", tweetController.reject.bind(tweetController));
