@@ -19,10 +19,7 @@ Antes de iniciar o servidor, edite o arquivo `.env-example` colocando seus dados
 Para instalar as dependências do projeto, basta rodar o seguinte comando:
 
 Usuários de yarn:
-
-```bash
-yarn
-```
+`yarn`
 
 Usuários de npm:
 `npm install`
