@@ -2,7 +2,7 @@
 
 ## Sobre o projeto
 
-Essa aplicação foi criada com para o processo seletivo da Globo.
+Essa aplicação foi criada para o processo seletivo da Globo.
 
 O objetivo é criar um aplicação controle que receba tweets com determinada hashtag e que, após serem aprovados, sejam mostrados em um telão.
 
