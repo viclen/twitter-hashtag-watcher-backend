@@ -143,6 +143,7 @@ class TweetController {
                 watching: false,
                 language: this.data.language
             };
+            this.lastId = 0;
 
             req.io.emit("change", this.data);
         }
