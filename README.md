@@ -8,6 +8,15 @@ O objetivo é criar um aplicação controle que receba tweets com determinada ha
 
 O backend da aplicação foi feito em Node.js, usando websockets para comunicação com o frontend e a biblioteca Twit para fazer a stream dos tweets - também fazendo uso de websockets.
 
+## Demo
+
+A imagem a seguir mostra a tela de moderaçao dos tweets:
+
+![Admin Panel](./git-img/admin.png)
+
+E essa é a visualização do telão.
+![Screen View](./git-img/screen.png)
+
 ## Primeiros passos
 
 Antes de iniciar o servidor, edite o arquivo `.env-example` colocando seus dados para a API do Twitter*. Após isso, renomeie o arquivo para `.env`.
