@@ -30,6 +30,7 @@ Usuários de npm:
 
 Usuários de yarn:
 `yarn start`
+
 Usuários de npm:
 `npm run start`
 
@@ -37,6 +38,7 @@ Usuários de npm:
 
 Usuários de yarn:
 `yarn build`
+
 Usuários de npm:
 `npm run build`
 
