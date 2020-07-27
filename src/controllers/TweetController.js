@@ -92,11 +92,32 @@ class TweetController {
                     return;
                 }
 
+                // se o tweet passa dos 140 caracteres
+                const text = tweet.extended_tweet ? tweet.extended_tweet.full_text || tweet.text : tweet.text;
+
                 // coloca um id pra ser usado nos requests
                 tweet.id = ++this.lastId;
 
                 // adiciona à lista geral
-                this.data.list = [...this.data.list, tweet];
+                const {
+                    user: {
+                        profile_image_url_https,
+                        name,
+                        screen_name,
+                        id: user_id,
+                        profile_image_url
+                    }, id
+                } = tweet;
+
+                this.data.list = [...this.data.list, {
+                    text, user: {
+                        profile_image_url_https,
+                        name,
+                        screen_name,
+                        id: user_id,
+                        profile_image_url
+                    }, id
+                }];
 
                 // emite o socket com os dados para o front end
                 req.io.emit("change", this.data);
