@@ -529,7 +529,8 @@ class TweetController {
         // aplicar IA
         const list = [...this.state.list];
         for (const i in list) {
-            this.analyze_tweet(this.state.list.splice(i, 1)[0]);
+            const tt = this.state.list.splice(i, 1)[0];
+            this.analyze_tweet(tt);
         }
 
         req.io.emit('change', this.state);
