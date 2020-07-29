@@ -189,7 +189,7 @@ class TweetController {
                             }, id
                         }];
                     } else {
-                        const probability = rl_probability(text);
+                        const probability = this.rl_probability(text);
 
                         if (probability == 'pos') {
                             this.state.approved = [...this.state.approved, {
@@ -317,7 +317,7 @@ class TweetController {
                 req.io.emit('change', this.state);
 
                 // reinforcement learning words score
-                rl_set_score(tweet.text, 1);
+                this.rl_set_score(tweet.text, 1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -342,7 +342,7 @@ class TweetController {
                 req.io.emit('change', this.state);
 
                 // reinforcement learning words score
-                rl_set_score(tweet.text, 1);
+                this.rl_set_score(tweet.text, 1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -382,7 +382,7 @@ class TweetController {
                 req.io.emit('change', this.state);
 
                 // reinforcement learning words score
-                rl_set_score(tweet.text, -1);
+                this.rl_set_score(tweet.text, -1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -407,7 +407,7 @@ class TweetController {
                 req.io.emit('change', this.state);
 
                 // reinforcement learning words score
-                rl_set_score(tweet.text, -1);
+                this.rl_set_score(tweet.text, -1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
