@@ -1,6 +1,7 @@
 import Twit from 'twit';
 import dotenv from 'dotenv';
 import regeneratorRuntime from "regenerator-runtime";
+import { SentimentIntensityAnalyzer } from "vader-sentiment";
 
 dotenv.config();
 
@@ -16,6 +17,18 @@ const SUPPORTED_LANGUAGES = {
     ja: 'Japanese',
     pt: 'Portuguese',
     es: 'Spanish',
+}
+
+const clear_tweet = (text = '') => {
+    let out = '';
+
+    text.split(' ').forEach(word => {
+        if (!word.startsWith('@')) {
+            out += word.toLowerCase().replace(/#/g, '').replace(/@/g, 'a') + " ";
+        }
+    })
+
+    return out.trim();
 }
 
 class TweetController {
@@ -44,7 +57,8 @@ class TweetController {
             approved: [],
             rejected: [],
             watching: false,
-            language: ''
+            language: '',
+            ai_enabled: false
         };
 
         // referencia pra criar os IDs unicos
@@ -109,15 +123,51 @@ class TweetController {
                     }, id
                 } = tweet;
 
-                this.data.list = [...this.data.list, {
-                    text, user: {
-                        profile_image_url_https,
-                        name,
-                        screen_name,
-                        id: user_id,
-                        profile_image_url
-                    }, id
-                }];
+                if (this.data.ai_enabled) {
+                    const { compound } = SentimentIntensityAnalyzer.polarity_scores(clear_tweet(text))
+
+                    if (compound >= 0.05) { // negativo
+                        this.data.approved = [...this.data.approved, {
+                            text, user: {
+                                profile_image_url_https,
+                                name,
+                                screen_name,
+                                id: user_id,
+                                profile_image_url
+                            }, id
+                        }];
+                    } else if (compound <= -0.05) {
+                        this.data.rejected = [...this.data.rejected, {
+                            text, user: {
+                                profile_image_url_https,
+                                name,
+                                screen_name,
+                                id: user_id,
+                                profile_image_url
+                            }, id
+                        }];
+                    } else {
+                        this.data.list = [...this.data.list, {
+                            text, user: {
+                                profile_image_url_https,
+                                name,
+                                screen_name,
+                                id: user_id,
+                                profile_image_url
+                            }, id
+                        }];
+                    }
+                } else {
+                    this.data.list = [...this.data.list, {
+                        text, user: {
+                            profile_image_url_https,
+                            name,
+                            screen_name,
+                            id: user_id,
+                            profile_image_url
+                        }, id
+                    }];
+                }
 
                 // emite o socket com os dados para o front end
                 req.io.emit("change", this.data);
@@ -162,7 +212,8 @@ class TweetController {
                 approved: [],
                 rejected: [],
                 watching: false,
-                language: this.data.language
+                language: this.data.language,
+                ai_enabled: false
             };
             this.lastId = 0;
 
@@ -363,6 +414,11 @@ class TweetController {
         return res.status(404).json({
             status: 0
         });
+    }
+
+
+    enable_ai(req, res) {
+        this.data.ai_enabled = true;
     }
 }
 
