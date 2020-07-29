@@ -119,7 +119,28 @@ class TweetController {
     save_rl_data() {
         if (Object.keys(this.rl_data).length > 0) {
             writeFile(RL_MODEL_FILE, JSON.stringify(this.rl_data), (err) => {
-                console.log('Reinforcement learning data saved. Dictionary size: ' + Object.keys(this.rl_data).length);
+                let max = 0;
+                let min = 0;
+                let max_word = "";
+                let min_word = "";
+                for (const key in this.rl_data) {
+                    if (this.rl_data.hasOwnProperty(key)) {
+                        const element = this.rl_data[key];
+                        if (element > max) {
+                            max = element;
+                            max_word = key;
+                        } else if (element < min) {
+                            min = element;
+                            min_word = key;
+                        }
+                    }
+                }
+                console.log(`---------\n
+Reinforcement learning data saved.\n
+Dictionary size: ${Object.keys(this.rl_data).length}.\n
+Best word: ${max_word}\n
+Worst word: ${min_word}\n
+---------`);
             });
         }
     }
