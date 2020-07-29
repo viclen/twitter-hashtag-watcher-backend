@@ -540,6 +540,8 @@ class TweetController {
             this.state.list.splice(i, 1);
             this.analyze_tweet(list[i]);
         }
+
+        req.io.emit('change', this.state);
     }
 
     /**
