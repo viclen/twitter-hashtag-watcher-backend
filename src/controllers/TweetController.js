@@ -3,35 +3,11 @@ import dotenv from 'dotenv';
 import regeneratorRuntime from "regenerator-runtime";
 import { SentimentIntensityAnalyzer } from "vader-sentiment";
 import { writeFile, readFile } from 'fs';
+import List from '../models/List';
 
 dotenv.config();
 
 const RL_MODEL_FILE = 'src/storage/rl_model.json';
-
-const List = function (array = [], limit = 0, reversed = false) {
-    array.reversed = reversed;
-    array.limit = limit;
-
-    array.add = (element) => {
-        if (array.limit > 0 && array.length >= array.limit) {
-            if (array.reversed) {
-                array.splice(array.length - 1, 1);
-            } else {
-                array.splice(0, 1);
-            }
-        }
-
-        if (array.reversed) {
-            array.reverse()
-            array.push(element);
-            array.reverse();
-        } else {
-            array.push(element);
-        }
-    }
-
-    return array;
-}
 
 const SUPPORTED_LANGUAGES = {
     ar: 'Arabic',
@@ -135,12 +111,7 @@ class TweetController {
                         }
                     }
                 }
-                console.log(`---------\n
-Reinforcement learning data saved.\n
-Dictionary size: ${Object.keys(this.rl_data).length}.\n
-Best word: ${max_word} - ${max}\n
-Worst word: ${min_word} - ${min}\n
----------`);
+                console.log(`---------\nReinforcement learning data saved.\nDictionary size: ${Object.keys(this.rl_data).length}.\nBest word: ${max_word} - ${max}\nWorst word: ${min_word} - ${min}\n---------`);
             });
         }
     }
