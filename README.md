@@ -2,11 +2,23 @@
 
 ## Sobre o projeto
 
-Essa aplicação foi criada para o processo seletivo da Globo.
-
 O objetivo é criar um aplicação controle que receba tweets com determinada hashtag e que, após serem aprovados, sejam mostrados em um telão.
 
 O backend da aplicação foi feito em Node.js, usando websockets para comunicação com o frontend e a biblioteca Twit para fazer a stream dos tweets - também fazendo uso de websockets.
+
+O front end da aplicacao está disponível [aqui](https://github.com/viclen/twitter-hashtag-watcher-frontend).
+
+## IA
+
+A inteligência artificial desse projeto foi feita usando duas ferramentas:
+
+### Bert - Natural Language Processing
+
+A IA da google para processamento, compreensão e análise de linguagem natural. Esse recurso foi desenvolvido em python e está disponível [aqui](https://github.com/viclen/nlp-twitter-python).
+
+### Vader Sentiment Analysis
+
+Em conjunto com a IA de linguagem natural, foi usado o [VaderSentiment](https://github.com/cjhutto/vaderSentiment) para fazer a análise do tweet dentro do próprio servidor Node.js.
 
 ## Demo
 
