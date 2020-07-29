@@ -19,4 +19,8 @@ router.get("/tweet/:id/approve", tweetController.approve.bind(tweetController));
 router.get("/tweet/:id/reject", tweetController.reject.bind(tweetController));
 router.delete("/tweet/:id", tweetController.delete.bind(tweetController));
 
+// rotas de IA
+router.get("/ai/enable", tweetController.enable_ai.bind(tweetController));
+router.get("/ai/disable", tweetController.disable_ai.bind(tweetController));
+
 module.exports = router;

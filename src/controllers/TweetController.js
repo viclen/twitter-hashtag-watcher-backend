@@ -416,9 +416,32 @@ class TweetController {
         });
     }
 
-
+    /**
+     * Habilita a auto-aprovação de tweets por IA
+     * @param {Request} req a requisicao
+     * @param {Response} res a resposta
+     */
     enable_ai(req, res) {
         this.data.ai_enabled = true;
+        req.io.emit('change', this.data);
+
+        return res.status(200).json({
+            status: 1
+        });
+    }
+
+    /**
+     * Habilita a auto-aprovação de tweets por IA
+     * @param {Request} req a requisicao
+     * @param {Response} res a resposta
+     */
+    disable_ai(req, res) {
+        this.data.ai_enabled = false;
+        req.io.emit('change', this.data);
+
+        return res.status(200).json({
+            status: 1
+        });
     }
 }
 
