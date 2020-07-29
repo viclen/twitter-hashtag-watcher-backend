@@ -23,7 +23,7 @@ const clear_tweet = (text = '') => {
     let out = '';
 
     text.split(' ').forEach(word => {
-        if (!word.startsWith('@')) {
+        if (!word.startsWith('@') && !(word.startsWith('http://') || word.startsWith('https://'))) {
             out += word.toLowerCase().replace(/#/g, '').replace(/@/g, 'a') + " ";
         }
     })
