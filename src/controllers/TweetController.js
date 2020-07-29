@@ -423,7 +423,7 @@ class TweetController {
      */
     enable_ai(req, res) {
         this.data.ai_enabled = true;
-        req.io.emit('change', this.data);
+        // req.io.emit('change', this.data);
 
         return res.status(200).json({
             status: 1
@@ -437,7 +437,7 @@ class TweetController {
      */
     disable_ai(req, res) {
         this.data.ai_enabled = false;
-        req.io.emit('change', this.data);
+        // req.io.emit('change', this.data);
 
         return res.status(200).json({
             status: 1
