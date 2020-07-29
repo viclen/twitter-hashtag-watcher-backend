@@ -138,8 +138,8 @@ class TweetController {
                 console.log(`---------\n
 Reinforcement learning data saved.\n
 Dictionary size: ${Object.keys(this.rl_data).length}.\n
-Best word: ${max_word}\n
-Worst word: ${min_word}\n
+Best word: ${max_word} - ${max}\n
+Worst word: ${min_word} - ${min}\n
 ---------`);
             });
         }
