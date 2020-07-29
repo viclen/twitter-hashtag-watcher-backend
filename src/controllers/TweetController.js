@@ -50,8 +50,12 @@ class TweetController {
         // propriedade que vai armazenar a stream
         this.stream = null;
 
+        // dados para reinforcement learning
+        this.rl_data = {};
+        this.learning_rate = 0.1;
+
         // dados dos tweets
-        this.data = {
+        this.state = {
             hashtag: '',
             list: [],
             approved: [],
@@ -68,10 +72,48 @@ class TweetController {
         TweetController.instance = this;
     }
 
+    // probabilidade por RL
+    rl_probability(text) {
+        let total_score = 0;
+
+        const words = clear_tweet(text).split(' ');
+
+        if (!words.length) {
+            return 'neu';
+        }
+
+        words.forEach(word => {
+            if (!!this.rl_data[word]) {
+                total_score += parseFloat(this.rl_data[word]);
+            }
+        });
+
+        const mean_square = total_score / words.length;
+
+        if (mean_square > 0.5) {
+            return 'pos';
+        } else if (mean_square < 0.5) {
+            return 'neg';
+        } else {
+            return 'neu';
+        }
+    }
+
+    // set the score of the word
+    rl_set_score(text = '', multiplier = 1) {
+        clear_tweet(text).split(' ').forEach(word => {
+            this.rl_data[word] = this.rl_data[word]
+                ?
+                parseFloat(this.rl_data[word]) + this.learning_rate * multiplier
+                :
+                this.learning_rate * multiplier;
+        })
+    }
+
     // inicia o monitoramento de uma hashtag
     watch(req, res) {
         // se já não estiver monitorando
-        if (!this.data.watching) {
+        if (!this.state.watching) {
             // pega a hashtag do request
             let { hashtag } = req.params;
 
@@ -89,15 +131,15 @@ class TweetController {
                 // adiciona ao filtro
                 query.language = language;
                 // adiciona aos dados
-                this.data.language = language;
+                this.state.language = language;
             }
             // cria a stream
             this.stream = this.T.stream('statuses/filter', query);
 
             // salva a hashtag nos dados
-            this.data.hashtag = hashtag;
+            this.state.hashtag = hashtag;
             // salva se esta monitorando nos dados
-            this.data.watching = true;
+            this.state.watching = true;
 
             // adiciona o evento para cada tweet novo
             this.stream.on('tweet', tweet => {
@@ -123,11 +165,11 @@ class TweetController {
                     }, id
                 } = tweet;
 
-                if (this.data.ai_enabled) {
+                if (this.state.ai_enabled) {
                     const { compound } = SentimentIntensityAnalyzer.polarity_scores(clear_tweet(text))
 
                     if (compound >= 0.05) { // negativo
-                        this.data.approved = [...this.data.approved, {
+                        this.state.approved = [...this.state.approved, {
                             text, user: {
                                 profile_image_url_https,
                                 name,
@@ -137,7 +179,7 @@ class TweetController {
                             }, id
                         }];
                     } else if (compound <= -0.05) {
-                        this.data.rejected = [...this.data.rejected, {
+                        this.state.rejected = [...this.state.rejected, {
                             text, user: {
                                 profile_image_url_https,
                                 name,
@@ -147,18 +189,42 @@ class TweetController {
                             }, id
                         }];
                     } else {
-                        this.data.list = [...this.data.list, {
-                            text, user: {
-                                profile_image_url_https,
-                                name,
-                                screen_name,
-                                id: user_id,
-                                profile_image_url
-                            }, id
-                        }];
+                        const probability = rl_probability(text);
+
+                        if (probability == 'pos') {
+                            this.state.approved = [...this.state.approved, {
+                                text, user: {
+                                    profile_image_url_https,
+                                    name,
+                                    screen_name,
+                                    id: user_id,
+                                    profile_image_url
+                                }, id
+                            }];
+                        } else if (probability == 'neg') {
+                            this.state.rejected = [...this.state.rejected, {
+                                text, user: {
+                                    profile_image_url_https,
+                                    name,
+                                    screen_name,
+                                    id: user_id,
+                                    profile_image_url
+                                }, id
+                            }];
+                        } else {
+                            this.state.list = [...this.state.list, {
+                                text, user: {
+                                    profile_image_url_https,
+                                    name,
+                                    screen_name,
+                                    id: user_id,
+                                    profile_image_url
+                                }, id
+                            }];
+                        }
                     }
                 } else {
-                    this.data.list = [...this.data.list, {
+                    this.state.list = [...this.state.list, {
                         text, user: {
                             profile_image_url_https,
                             name,
@@ -170,17 +236,17 @@ class TweetController {
                 }
 
                 // emite o socket com os dados para o front end
-                req.io.emit("change", this.data);
+                req.io.emit("change", this.state);
             });
 
             // emite o socket com os dados para o front end
-            req.io.emit("change", this.data);
+            req.io.emit("change", this.state);
         }
 
         // retorna dizendo que funcionou
         return res.json({
             status: 1,
-            data: this.data
+            data: this.state
         });
     };
 
@@ -189,9 +255,9 @@ class TweetController {
         // se uma stream estiver sendo monitorada
         if (this.stream) {
             this.stream.stop();
-            this.data.watching = false;
+            this.state.watching = false;
 
-            req.io.emit("change", this.data);
+            req.io.emit("change", this.state);
         }
 
         // retorna dizendo que funcionou
@@ -206,18 +272,18 @@ class TweetController {
         if (this.stream) {
             this.stream.stop();
 
-            this.data = {
-                hashtag: this.data.hashtag,
+            this.state = {
+                hashtag: this.state.hashtag,
                 list: [],
                 approved: [],
                 rejected: [],
                 watching: false,
-                language: this.data.language,
+                language: this.state.language,
                 ai_enabled: false
             };
             this.lastId = 0;
 
-            req.io.emit("change", this.data);
+            req.io.emit("change", this.state);
         }
 
         // retorna dizendo que funcionou
@@ -236,19 +302,22 @@ class TweetController {
         const { id } = req.params;
 
         // loop pelos itens da lista geral
-        for (const index in this.data.list) {
-            const tweet = this.data.list[index];
+        for (const index in this.state.list) {
+            const tweet = this.state.list[index];
 
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos aprovados
-                this.data.approved = [tweet, ...this.data.approved];
+                this.state.approved = [tweet, ...this.state.approved];
 
                 // remove da lista geral
-                this.data.list.splice(index, 1);
+                this.state.list.splice(index, 1);
 
                 // emite o socket com a mudanca
-                req.io.emit('change', this.data);
+                req.io.emit('change', this.state);
+
+                // reinforcement learning words score
+                rl_set_score(tweet.text, 1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -258,19 +327,22 @@ class TweetController {
         }
 
         // loop pelos itens da lista de aprovados
-        for (const index in this.data.rejected) {
-            const tweet = this.data.rejected[index];
+        for (const index in this.state.rejected) {
+            const tweet = this.state.rejected[index];
 
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos aprovados
-                this.data.approved = [tweet, ...this.data.approved];
+                this.state.approved = [tweet, ...this.state.approved];
 
                 // remove da lista de aprovados
-                this.data.rejected.splice(index, 1);
+                this.state.rejected.splice(index, 1);
 
                 // emite o socket com a mudanca
-                req.io.emit('change', this.data);
+                req.io.emit('change', this.state);
+
+                // reinforcement learning words score
+                rl_set_score(tweet.text, 1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -295,19 +367,22 @@ class TweetController {
         const { id } = req.params;
 
         // loop pelos itens da lista geral
-        for (const index in this.data.list) {
-            const tweet = this.data.list[index];
+        for (const index in this.state.list) {
+            const tweet = this.state.list[index];
 
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos rejeitados
-                this.data.rejected = [tweet, ...this.data.rejected];
+                this.state.rejected = [tweet, ...this.state.rejected];
 
                 // remove da lista geral
-                this.data.list.splice(index, 1);
+                this.state.list.splice(index, 1);
 
                 // emite o socket com a mudanca
-                req.io.emit('change', this.data);
+                req.io.emit('change', this.state);
+
+                // reinforcement learning words score
+                rl_set_score(tweet.text, -1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -317,19 +392,22 @@ class TweetController {
         }
 
         // loop pelos itens da lista de aprovados
-        for (const index in this.data.approved) {
-            const tweet = this.data.approved[index];
+        for (const index in this.state.approved) {
+            const tweet = this.state.approved[index];
 
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos rejeitados
-                this.data.rejected = [tweet, ...this.data.rejected];
+                this.state.rejected = [tweet, ...this.state.rejected];
 
                 // remove da lista de aprovados
-                this.data.approved.splice(index, 1);
+                this.state.approved.splice(index, 1);
 
                 // emite o socket com a mudanca
-                req.io.emit('change', this.data);
+                req.io.emit('change', this.state);
+
+                // reinforcement learning words score
+                rl_set_score(tweet.text, -1);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -354,16 +432,16 @@ class TweetController {
         const { id } = req.params;
 
         // loop pelos itens da lista geral
-        for (const index in this.data.list) {
-            const tweet = this.data.list[index];
+        for (const index in this.state.list) {
+            const tweet = this.state.list[index];
 
             // se é o id selecionado
             if (tweet.id == id) {
                 // remove da lista geral
-                this.data.list.splice(index, 1);
+                this.state.list.splice(index, 1);
 
                 // emite o socket com a mudanca
-                req.io.emit('change', this.data);
+                req.io.emit('change', this.state);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -373,16 +451,16 @@ class TweetController {
         }
 
         // loop pelos itens da lista de aprovados
-        for (const index in this.data.approved) {
-            const tweet = this.data.approved[index];
+        for (const index in this.state.approved) {
+            const tweet = this.state.approved[index];
 
             // se é o id selecionado
             if (tweet.id == id) {
                 // remove da lista de aprovados
-                this.data.approved.splice(index, 1);
+                this.state.approved.splice(index, 1);
 
                 // emite o socket com a mudanca
-                req.io.emit('change', this.data);
+                req.io.emit('change', this.state);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -392,16 +470,16 @@ class TweetController {
         }
 
         // loop pelos itens da lista de rejeitados
-        for (const index in this.data.rejected) {
-            const tweet = this.data.rejected[index];
+        for (const index in this.state.rejected) {
+            const tweet = this.state.rejected[index];
 
             // se é o id selecionado
             if (tweet.id == id) {
                 // remove da lista de rejeitados
-                this.data.rejected.splice(index, 1);
+                this.state.rejected.splice(index, 1);
 
                 // emite o socket com a mudanca
-                req.io.emit('change', this.data);
+                req.io.emit('change', this.state);
 
                 // termina o request aqui dizendo que funcionou
                 return res.json({
@@ -422,7 +500,7 @@ class TweetController {
      * @param {Response} res a resposta
      */
     enable_ai(req, res) {
-        this.data.ai_enabled = true;
+        this.state.ai_enabled = true;
         // req.io.emit('change', this.data);
 
         return res.status(200).json({
@@ -436,7 +514,7 @@ class TweetController {
      * @param {Response} res a resposta
      */
     disable_ai(req, res) {
-        this.data.ai_enabled = false;
+        this.state.ai_enabled = false;
         // req.io.emit('change', this.data);
 
         return res.status(200).json({

@@ -23,7 +23,7 @@ class Socket {
             // se o tweet controller já tiver uma instancia iniciada
             if (TweetController.instance) {
                 // emite um socket inicial com o estado atual das listas de tweet
-                socket.emit('init', TweetController.instance.data);
+                socket.emit('init', TweetController.instance.state);
             }
 
             // adiciona o listener para desconexao
