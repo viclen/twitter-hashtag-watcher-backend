@@ -92,7 +92,7 @@ class TweetController {
 
         if (mean_square > 0.5) {
             return 'pos';
-        } else if (mean_square < 0.5) {
+        } else if (mean_square < -0.5) {
             return 'neg';
         } else {
             return 'neu';
@@ -168,8 +168,8 @@ class TweetController {
                 if (this.state.ai_enabled) {
                     const { compound } = SentimentIntensityAnalyzer.polarity_scores(clear_tweet(text))
 
-                    if (compound >= 0.05) { // negativo
-                        this.state.approved = [...this.state.approved, {
+                    if (compound >= 0.05) { // positivo
+                        this.state.approved = [{
                             text, user: {
                                 profile_image_url_https,
                                 name,
@@ -177,8 +177,8 @@ class TweetController {
                                 id: user_id,
                                 profile_image_url
                             }, id
-                        }];
-                    } else if (compound <= -0.05) {
+                        }, ...this.state.approved];
+                    } else if (compound <= -0.05) { // negativo
                         this.state.rejected = [...this.state.rejected, {
                             text, user: {
                                 profile_image_url_https,
@@ -187,12 +187,12 @@ class TweetController {
                                 id: user_id,
                                 profile_image_url
                             }, id
-                        }];
-                    } else {
+                        }, ...this.state.rejected];
+                    } else { // neutro
                         const probability = this.rl_probability(text);
 
                         if (probability == 'pos') {
-                            this.state.approved = [...this.state.approved, {
+                            this.state.approved = [{
                                 text, user: {
                                     profile_image_url_https,
                                     name,
@@ -200,9 +200,9 @@ class TweetController {
                                     id: user_id,
                                     profile_image_url
                                 }, id
-                            }];
+                            }, ...this.state.approved];
                         } else if (probability == 'neg') {
-                            this.state.rejected = [...this.state.rejected, {
+                            this.state.rejected = [{
                                 text, user: {
                                     profile_image_url_https,
                                     name,
@@ -210,7 +210,7 @@ class TweetController {
                                     id: user_id,
                                     profile_image_url
                                 }, id
-                            }];
+                            }, ...this.state.rejected];
                         } else {
                             this.state.list = [...this.state.list, {
                                 text, user: {
