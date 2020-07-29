@@ -28,5 +28,11 @@
     "build": "babel src -d dist --source-maps",
     "start": "nodemon --exec babel-node src/server.js",
     "dist": "node dist/server.js"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "src/storage/*",
+      "storage/*"
+    ]
   }
 }

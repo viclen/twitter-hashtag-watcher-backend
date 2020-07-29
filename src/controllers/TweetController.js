@@ -2,8 +2,36 @@ import Twit from 'twit';
 import dotenv from 'dotenv';
 import regeneratorRuntime from "regenerator-runtime";
 import { SentimentIntensityAnalyzer } from "vader-sentiment";
+import { writeFile, readFile } from 'fs';
 
 dotenv.config();
+
+const RL_MODEL_FILE = 'src/storage/rl_model.json';
+
+const List = function (array = [], limit = 0, reversed = false) {
+    array.reversed = reversed;
+    array.limit = limit;
+
+    array.add = (element) => {
+        if (array.limit > 0 && array.length >= array.limit) {
+            if (array.reversed) {
+                array.splice(array.length - 1, 1);
+            } else {
+                array.splice(0, 1);
+            }
+        }
+
+        if (array.reversed) {
+            array.reverse()
+            array.push(element);
+            array.reverse();
+        } else {
+            array.push(element);
+        }
+    }
+
+    return array;
+}
 
 const SUPPORTED_LANGUAGES = {
     ar: 'Arabic',
@@ -51,17 +79,28 @@ class TweetController {
         this.stream = null;
 
         // dados para reinforcement learning
+        readFile(RL_MODEL_FILE, 'utf8', (err, txt) => {
+            if (txt) {
+                try {
+                    this.rl_data = JSON.parse(txt) || {};
+                } catch (error) {
+                    this.rl_data = {};
+                }
+            }
+        });
+
         this.rl_data = {};
         this.learning_rate = 0.1;
+        this.list_limit = 20;
 
         // dados dos tweets
         this.state = {
             hashtag: '',
-            list: [],
-            approved: [],
-            rejected: [],
+            list: List([], 15),
+            approved: List([], 25, true),
+            rejected: List([], 15, true),
             watching: false,
-            language: '',
+            language: 'en',
             ai_enabled: false
         };
 
@@ -70,13 +109,29 @@ class TweetController {
 
         // salva a instancia na propriedade estatica
         TweetController.instance = this;
+
+        setInterval(() => this.write_rl_data(), 60000);
     }
 
-    // probabilidade por RL
+    /**
+     * escrever dados da ia
+     */
+    write_rl_data() {
+        if (Object.keys(this.rl_data).length > 0) {
+            writeFile(RL_MODEL_FILE, JSON.stringify(this.rl_data), (err) => {
+                console.log('Reinforcement learning data saved.');
+            });
+        }
+    }
+
+    /**
+     * probabilidade por RL
+     * @param {String} text 
+     */
     rl_probability(text) {
         let total_score = 0;
 
-        const words = clear_tweet(text).split(' ');
+        const words = clear_tweet(text.replace(/\n/g, '')).split(' ');
 
         if (!words.length) {
             return 'neu';
@@ -101,13 +156,34 @@ class TweetController {
 
     // set the score of the word
     rl_set_score(text = '', multiplier = 1) {
-        clear_tweet(text).split(' ').forEach(word => {
+        clear_tweet(text.replace(/\n/g, '')).split(' ').forEach(word => {
             this.rl_data[word] = this.rl_data[word]
                 ?
                 parseFloat(this.rl_data[word]) + this.learning_rate * multiplier
                 :
                 this.learning_rate * multiplier;
-        })
+        });
+    }
+
+    // analisa o tweet
+    analyze_tweet(tweet) {
+        const { compound } = SentimentIntensityAnalyzer.polarity_scores(clear_tweet(tweet.text))
+
+        if (compound >= 0.05) { // positivo
+            this.state.approved.add(tweet);
+        } else if (compound <= -0.05) { // negativo
+            this.state.rejected.add(tweet);
+        } else { // neutro
+            const probability = this.rl_probability(tweet.text);
+
+            if (probability == 'pos') {
+                this.state.approved.add(tweet);
+            } else if (probability == 'neg') {
+                this.state.rejected.add(tweet);
+            } else {
+                this.state.list.add(tweet);
+            }
+        }
     }
 
     // inicia o monitoramento de uma hashtag
@@ -166,65 +242,7 @@ class TweetController {
                 } = tweet;
 
                 if (this.state.ai_enabled) {
-                    const { compound } = SentimentIntensityAnalyzer.polarity_scores(clear_tweet(text))
-
-                    if (compound >= 0.05) { // positivo
-                        this.state.approved = [{
-                            text, user: {
-                                profile_image_url_https,
-                                name,
-                                screen_name,
-                                id: user_id,
-                                profile_image_url
-                            }, id
-                        }, ...this.state.approved];
-                    } else if (compound <= -0.05) { // negativo
-                        this.state.rejected = [...this.state.rejected, {
-                            text, user: {
-                                profile_image_url_https,
-                                name,
-                                screen_name,
-                                id: user_id,
-                                profile_image_url
-                            }, id
-                        }, ...this.state.rejected];
-                    } else { // neutro
-                        const probability = this.rl_probability(text);
-
-                        if (probability == 'pos') {
-                            this.state.approved = [{
-                                text, user: {
-                                    profile_image_url_https,
-                                    name,
-                                    screen_name,
-                                    id: user_id,
-                                    profile_image_url
-                                }, id
-                            }, ...this.state.approved];
-                        } else if (probability == 'neg') {
-                            this.state.rejected = [{
-                                text, user: {
-                                    profile_image_url_https,
-                                    name,
-                                    screen_name,
-                                    id: user_id,
-                                    profile_image_url
-                                }, id
-                            }, ...this.state.rejected];
-                        } else {
-                            this.state.list = [...this.state.list, {
-                                text, user: {
-                                    profile_image_url_https,
-                                    name,
-                                    screen_name,
-                                    id: user_id,
-                                    profile_image_url
-                                }, id
-                            }];
-                        }
-                    }
-                } else {
-                    this.state.list = [...this.state.list, {
+                    this.analyze_tweet({
                         text, user: {
                             profile_image_url_https,
                             name,
@@ -232,7 +250,17 @@ class TweetController {
                             id: user_id,
                             profile_image_url
                         }, id
-                    }];
+                    });
+                } else {
+                    this.state.list.add({
+                        text, user: {
+                            profile_image_url_https,
+                            name,
+                            screen_name,
+                            id: user_id,
+                            profile_image_url
+                        }, id
+                    });
                 }
 
                 // emite o socket com os dados para o front end
@@ -279,7 +307,7 @@ class TweetController {
                 rejected: [],
                 watching: false,
                 language: this.state.language,
-                ai_enabled: false
+                ai_enabled: this.state.ai_enabled
             };
             this.lastId = 0;
 
@@ -308,7 +336,7 @@ class TweetController {
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos aprovados
-                this.state.approved = [tweet, ...this.state.approved];
+                this.state.approved.add(tweet);
 
                 // remove da lista geral
                 this.state.list.splice(index, 1);
@@ -333,7 +361,7 @@ class TweetController {
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos aprovados
-                this.state.approved = [tweet, ...this.state.approved];
+                this.state.approved.add(tweet);
 
                 // remove da lista de aprovados
                 this.state.rejected.splice(index, 1);
@@ -373,7 +401,7 @@ class TweetController {
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos rejeitados
-                this.state.rejected = [tweet, ...this.state.rejected];
+                this.state.rejected.add(tweet);
 
                 // remove da lista geral
                 this.state.list.splice(index, 1);
@@ -398,7 +426,7 @@ class TweetController {
             // se é o id selecionado
             if (tweet.id == id) {
                 // adiciona aos rejeitados
-                this.state.rejected = [tweet, ...this.state.rejected];
+                this.state.rejected.add(tweet);
 
                 // remove da lista de aprovados
                 this.state.approved.splice(index, 1);
@@ -501,11 +529,17 @@ class TweetController {
      */
     enable_ai(req, res) {
         this.state.ai_enabled = true;
-        // req.io.emit('change', this.data);
 
-        return res.status(200).json({
+        res.status(200).json({
             status: 1
         });
+
+        // aplicar IA
+        const list = [...this.state.list];
+        for (const i in list) {
+            this.state.list.splice(i, 1);
+            this.analyze_tweet(list[i]);
+        }
     }
 
     /**
@@ -515,7 +549,6 @@ class TweetController {
      */
     disable_ai(req, res) {
         this.state.ai_enabled = false;
-        // req.io.emit('change', this.data);
 
         return res.status(200).json({
             status: 1
