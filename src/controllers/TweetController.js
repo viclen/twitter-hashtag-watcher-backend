@@ -110,16 +110,16 @@ class TweetController {
         // salva a instancia na propriedade estatica
         TweetController.instance = this;
 
-        setInterval(() => this.write_rl_data(), 60000);
+        setInterval(() => this.save_rl_data(), 60000);
     }
 
     /**
      * escrever dados da ia
      */
-    write_rl_data() {
+    save_rl_data() {
         if (Object.keys(this.rl_data).length > 0) {
             writeFile(RL_MODEL_FILE, JSON.stringify(this.rl_data), (err) => {
-                console.log('Reinforcement learning data saved.');
+                console.log('Reinforcement learning data saved. Dictionary size: ' + Object.keys(this.rl_data).length);
             });
         }
     }
