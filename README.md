@@ -8,18 +8,6 @@ O backend da aplicação foi feito em Node.js, usando websockets para comunicaç
 
 O front end da aplicacao está disponível [aqui](https://github.com/viclen/twitter-hashtag-watcher-frontend).
 
-## IA
-
-A inteligência artificial desse projeto foi feita usando duas ferramentas:
-
-### Bert - Natural Language Processing
-
-A IA da google para processamento, compreensão e análise de linguagem natural. Esse recurso foi desenvolvido em python e está disponível [aqui](https://github.com/viclen/nlp-twitter-python).
-
-### Vader Sentiment Analysis
-
-Em conjunto com a IA de linguagem natural, foi usado o [VaderSentiment](https://github.com/cjhutto/vaderSentiment) para fazer a análise do tweet dentro do próprio servidor Node.js.
-
 ## Demo
 
 A imagem a seguir mostra a tela de moderaçao dos tweets:
@@ -28,6 +16,18 @@ A imagem a seguir mostra a tela de moderaçao dos tweets:
 
 E essa é a visualização do telão.
 ![Screen View](./git-img/screen.png)
+
+## IA
+
+A inteligência artificial desse projeto foi feita usando duas ferramentas: Bert e Vader. Vale destacar que a única linguagem disponível no momento é o inglês.
+
+### Bert - Natural Language Processing
+
+A IA da google para processamento, compreensão e análise de linguagem natural. Esse recurso foi desenvolvido em python e está disponível [aqui](https://github.com/viclen/nlp-twitter-python).
+
+### Vader Sentiment Analysis
+
+Em conjunto com a IA de linguagem natural, foi usado o [VaderSentiment](https://github.com/cjhutto/vaderSentiment) para fazer a análise do tweet dentro do próprio servidor Node.js.
 
 ## Primeiros passos
 
