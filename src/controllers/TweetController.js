@@ -294,9 +294,9 @@ class TweetController {
 
             this.state = {
                 hashtag: this.state.hashtag,
-                list: [],
-                approved: [],
-                rejected: [],
+                list: List([], 15),
+                approved: List([], 25, true),
+                rejected: List([], 15, true),
                 watching: false,
                 language: this.state.language,
                 ai_enabled: this.state.ai_enabled
