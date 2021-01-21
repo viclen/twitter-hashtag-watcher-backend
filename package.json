@@ -16,7 +16,7 @@
     "helmet": "^3.23.3",
     "nodemon": "^2.0.4",
     "regenerator-runtime": "^0.13.5",
-    "socket.io": "^2.3.0",
+    "socket.io": "^2.4.0",
     "twit": "^2.2.11",
     "vader-sentiment": "^1.1.3"
   },
